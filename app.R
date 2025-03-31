@@ -79,7 +79,7 @@ ui <- fluidPage(
 server <- function(input, output){
   # Map
   output$mapPlot <- renderLeaflet({
-    interactive_map(admin0)
+    interactive_map(census_tracker_data, admin0)
   })
   # DT table
   output$dataTable <- DT::renderDataTable({
