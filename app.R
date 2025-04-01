@@ -43,7 +43,7 @@ ui <- fluidPage(
   
   # BODY ------------------------------------------------------------------
   sidebarLayout(
-    # sidebar
+    #sidebar
     sidebarPanel(
       selectInput("country", "Country", choices = c("Kenya", "Ghana", "Nigeria")),
       selectInput("year", "Year", choices = c("2020", "2021", "2022")),
@@ -53,23 +53,24 @@ ui <- fluidPage(
     mainPanel(
       # key indicators
       fluidRow(
-        "test"
       ),
       # tabs
       tabsetPanel(
         # map
-        tabPanel("Map", 
+        tabPanel("Census Implementation",
                  div(leaflet::leafletOutput("mapPlot", height = "800px")),
+                 div(shiny::plotOutput("barPlot", height = "800px")),
+                 div(shiny::plotOutput("heatPlot", height = "800px")),
                  style = "overflow-y: auto; height: 100%;"
                  ),
         # table
-        tabPanel("Table", 
+        tabPanel("Civil Registration", 
                  div(DT::dataTableOutput("dataTable")),
                  style = "overflow-y: auto; height: 800px;"  # Scroll only within the table tab
                  )
       ),
       width = 10,  # Main panel width
-      style = "height: 900px; overflow: hidden;"  # Fixed height panel
+      #style = "height: 900px; overflow: hidden;"  # Fixed height panel
     )
   )
 )
@@ -77,10 +78,20 @@ ui <- fluidPage(
 
 # APP SERVER --------------------------------------------------------------
 server <- function(input, output){
+  # ------------- Census Section
   # Map
   output$mapPlot <- renderLeaflet({
     interactive_map(census_tracker_data, admin0)
   })
+  
+  output$barPlot <- renderPlot({
+    stack_bar_census(census_tracker_data)
+  })
+  
+  output$heatPlot <- renderPlot({
+    census_heatmap(census_tracker_data)
+  })
+  # ------------- Civil Registration Section
   # DT table
   output$dataTable <- DT::renderDataTable({
     interactive_table(census_tracker_data)
