@@ -12,7 +12,7 @@ pacman::p_load(
 
 # LOAD DATA ---------------------------------------------------------------
 
-census_tracker_data <- readxl::read_xlsx("data/UNFPA_global_census_2022_round.xlsx")
+census_tracker_data <- read_rds("data/clean_census_data.rds")
 admin0 <- sf::read_sf("data/UN_Geodata_simplified/admin0.shp")
 
 unfpa_reg <- "Arab States"
