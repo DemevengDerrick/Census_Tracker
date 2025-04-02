@@ -50,7 +50,12 @@ census_data <- census_tracker_file |>
                                       actual_enumeration_date_month == "Q4" ~ "October",
                                       actual_enumeration_date_month == "1" ~ "October",
                                       T ~ actual_enumeration_date_month
-                                    )
+                                    ),
+    enumeration_category = dplyr::case_when(
+                            actual_enumeration_date_year > 2024 ~ "No Census Conducted",
+                            is.na(actual_enumeration_date_year) ~ "No Census Conducted",
+                            T ~ as.character(actual_enumeration_date_year)
+                          )
   )
 
 

@@ -20,7 +20,7 @@ pacman::p_load(
 source("helper_functions.R")
 
 # LOAD DATA ---------------------------------------------------------------
-census_tracker_data <- readxl::read_xlsx("data/UNFPA_global_census_2022_round.xlsx")
+census_tracker_data <- read_rds("data/clean_census_data.rds")
 admin0 <- sf::read_sf("data/UN_Geodata_simplified/admin0.shp")
 
 # APP UI ------------------------------------------------------------------
@@ -88,9 +88,9 @@ server <- function(input, output){
     stack_bar_census(census_tracker_data)
   })
   
-  output$heatPlot <- renderPlot({
-    census_heatmap(census_tracker_data)
-  })
+  # output$heatPlot <- renderPlot({
+  #   census_heatmap(census_tracker_data)
+  # })
   # ------------- Civil Registration Section
   # DT table
   output$dataTable <- DT::renderDataTable({

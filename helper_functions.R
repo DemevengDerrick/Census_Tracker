@@ -32,6 +32,16 @@ unfpa_reg <- "Arab States"
 
 
 interactive_table <- function(census_data){
+  census_data <- census_data |>
+    dplyr::select("UNFPA Region" = unfpa_region, 
+                  "Country" = country, 
+                  "Original Planned Month" = originally_planned_census_month,
+                  "Original Planned Year" = originally_planned_census_year,
+                  "Actual Enumeration Month" = actual_enumeration_date_month,
+                  "Actual Enumeration Year" = actual_enumeration_date_year,
+                  "Enumeration Category" = enumeration_category
+                  )
+  
   DT::datatable(census_data)
 }
 
@@ -52,17 +62,18 @@ interactive_map <- function(census_data, admin0) {
   admin0 <- sf::st_transform(admin0, 4326) |> # Ensure CRS is correct
     dplyr::filter(ENDDATE == "9999/12/31 00:00:00.000") |>
     dplyr::left_join(census_data,
-                     by = c("ISO_3_CODE" = "UNFPA ISO3 Codes"))
+                     by = c("ISO_3_CODE" = "inter_standard_for_country_codes"))
   
   #factpal <- colorFactor(topo.colors(5), admin0$`Enumeration Category`)
-  factpal <- colorFactor("Paired", admin0$`Enumeration Category`)
+  factpal <- colorFactor("Paired", admin0$enumeration_category)
   #qpal <- colorQuantile("Blues",  admin0$`Enumeration Category`, n = 7)
+  #print(factpal)
   
   admin0_unfpa <- admin0 |>
-    dplyr::filter(!is.na(`UNFPA Region`), `Enumeration Category` != "No census conducted")
+    dplyr::filter(unfpa_region != "NON-UNFPA")
   
-  admin0_no_census <- admin0 |>
-    dplyr::filter(`Enumeration Category` == "No census conducted", !is.na(`UNFPA Region`))
+  # admin0_no_census <- admin0 |>
+  #   dplyr::filter(enumeration_category == "No Census Conducted", !is.na(unfpa_region))
   
   leaflet::leaflet() |>
     setView(lat = 11.5166646, lng = 3.8666632, zoom = 3) |>
@@ -92,32 +103,32 @@ interactive_map <- function(census_data, admin0) {
         direction = "auto"
       )
     )  |>
-    addPolygons(
-      data = admin0_no_census,
-      fillColor = "#666",
-      weight = 2,
-      opacity = 1,
-      color = "white",
-      dashArray = "",
-      fillOpacity = 1,
-      group = "No Census Conducted",  # Required for layer toggle
-      highlightOptions = highlightOptions(
-        weight = 2,
-        color = "#666",
-        dashArray = "",
-        fillOpacity = 1,
-        bringToFront = TRUE
-      ),
-      label = ~as.character(ADM0_NAME),  # Refer directly to the column name here
-      labelOptions = labelOptions(
-        style = list("font-weight" = "normal", padding = "3px 8px"),
-        textsize = "13px",
-        direction = "auto"
-      )
-    )  |>
+    # addPolygons(
+    #   data = admin0_no_census,
+    #   fillColor = "#666",
+    #   weight = 2,
+    #   opacity = 1,
+    #   color = "white",
+    #   dashArray = "",
+    #   fillOpacity = 1,
+    #   group = "No Census Conducted",  # Required for layer toggle
+    #   highlightOptions = highlightOptions(
+    #     weight = 2,
+    #     color = "#666",
+    #     dashArray = "",
+    #     fillOpacity = 1,
+    #     bringToFront = TRUE
+    #   ),
+    #   label = ~as.character(ADM0_NAME),  # Refer directly to the column name here
+    #   labelOptions = labelOptions(
+    #     style = list("font-weight" = "normal", padding = "3px 8px"),
+    #     textsize = "13px",
+    #     direction = "auto"
+    #   )
+    # )  |>
     addPolygons(
       data = admin0_unfpa,
-      fillColor = ~factpal(`Enumeration Category`),
+      fillColor = ~factpal(enumeration_category),
       weight = 2,
       opacity = 1,
       color = "white",
@@ -150,28 +161,40 @@ interactive_map <- function(census_data, admin0) {
       position = "bottomleft"
     ) |>
     addLegend(pal = factpal, 
-              values = admin0_unfpa$`Enumeration Category`, 
+              values = admin0_unfpa$enumeration_category, 
               opacity = 1, 
               position = "bottomleft",
               title = "Census Year"
               )
 }
 
+#interactive_map(census_tracker_data, admin0)
+
+
+#' Stack bar Census
+#'
+#' @param census_data 
+#'
+#' @returns stacked bar
+#' @export
+#'
+#' @examples
+#' 
 stack_bar_census <- function(census_data){
   census_data <- census_data |>
-    dplyr::group_by(`UNFPA Region`, `Enumeration Category`) |>
+    dplyr::group_by(unfpa_region, enumeration_category) |>
     count(name = "count") |>
     dplyr::mutate(
-      `UNFPA Region` = case_when(
-        `UNFPA Region` == "NA" ~ NA,
-        T ~ `UNFPA Region`
+      unfpa_region = case_when(
+        unfpa_region == "NA" ~ NA,
+        T ~ unfpa_region
       )
     ) |>
-    dplyr::filter(!is.na(`UNFPA Region`))
+    dplyr::filter(!is.na(unfpa_region))
   
-  my_colors <- RColorBrewer::brewer.pal(n = 12, name = "Paired")
+  my_colors <- RColorBrewer::brewer.pal(n = 11, name = "Paired")
   
-  ggplot2::ggplot(census_data, aes(fill = `Enumeration Category`, y = count, x = `UNFPA Region`)) +
+  ggplot2::ggplot(census_data, aes(fill = enumeration_category, y = count, x = unfpa_region)) +
     ggplot2::geom_bar(stat = "identity", position = "fill", color = "white") +
     ggplot2::scale_fill_manual(values = my_colors) +
     ggplot2::theme_void() +
